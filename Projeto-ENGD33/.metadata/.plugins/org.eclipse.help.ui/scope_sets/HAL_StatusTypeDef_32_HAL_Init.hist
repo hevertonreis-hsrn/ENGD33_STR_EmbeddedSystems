@@ -1,0 +1,4 @@
+#Wed Jul 02 14:34:24 BRT 2025
+__DEFAULT__=false
+expression=HAL_StatusTypeDef HAL_Init
+org.eclipse.help.ui.localSearch.master=true
