@@ -62,16 +62,24 @@ void vTaskGeraDados(void *pvParameters) {
     }
 }
 
+
+// Aplicação na task de transmissão:
+
+// Substituir o HAL_UART_Transmit() bruto:
+
+
 void vTaskTransmissao(void *pvParameters) {
     DadosRobo_t dados;
+    char txBuffer[128];
 
     while (1) {
-        // Espera indefinidamente até receber um item da fila de dados simulados.
         if (xQueueReceive(xFilaDadosRobo, &dados, portMAX_DELAY)) {
-            HAL_UART_Transmit(&huart6, (uint8_t*)&dados, sizeof(dados), HAL_MAX_DELAY);
+            FormatarDadosParaTransmissao(&dados, txBuffer, sizeof(txBuffer));
+            HAL_UART_Transmit(&huart6, (uint8_t*)txBuffer, strlen(txBuffer), HAL_MAX_DELAY);
         }
     }
 }
+
 
 // Função de callback chamada quando um byte é recebido via UART
 // Esta função é chamada automaticamente pela HAL quando a recepção é concluída
@@ -109,6 +117,7 @@ void vTaskRecepcao(void *pvParameters) {
     }
 }
 
+
 void SetupTarefasPortaCOMM(void) {
     // Inicializa as filas
     xFilaDadosRobo = xQueueCreate(10, sizeof(DadosRobo_t));
@@ -125,4 +134,47 @@ void SetupTarefasPortaCOMM(void) {
     xTaskCreate(vTaskGeraDados, "GeraDados",      256, NULL, 2, NULL);
     xTaskCreate(vTaskTransmissao, "Tx",           256, NULL, 2, NULL);
     xTaskCreate(vTaskRecepcao, "Rx",              256, NULL, 2, &xHandleRecepcao);
+    xTaskCreate(vTaskDatalog, "Datalog", 256, NULL, 1, NULL);
+
+}
+
+//  Atualmente o código transmite a struct completa DadosRobo_t via UART
+//  O que foi feito:
+//  função que formata os dados em string ou protocolo binário compacto:
+
+// funcoes auxiliares float --> inteiro
+
+#define SCALE_FACTOR 100
+
+int16_t floatToFixed(float value) {
+    return (int16_t)(value * SCALE_FACTOR);
+}
+
+float fixedToFloat(int16_t value) {
+    return ((float)value / SCALE_FACTOR);
+}
+
+void FormatarDadosParaTransmissao(DadosRobo_t *dados, char *buffer, size_t bufsize) {
+    snprintf(buffer, bufsize,"$VEL:%d,COR:%d,POSX:%d,POSY:%d,ORI:%d#\n",
+    floatToFixed(dados->velocidade),
+    floatToFixed(dados->corrente_motor),
+    floatToFixed(dados->pos_x),
+    floatToFixed(dados->pos_y),
+    floatToFixed(dados->orientacao)
+    );
+
+}
+
+// task extra para transmitir dados do datalog:
+
+void vTaskDatalog(void *pvParameters) {
+    char datalogBuffer[128];
+
+    while (1) {
+        // Simulação: Gerar um log fictício
+        snprintf(datalogBuffer, sizeof(datalogBuffer), "LOG:Tempo=%lu\n", HAL_GetTick());
+        HAL_UART_Transmit(&huart6, (uint8_t*)datalogBuffer, strlen(datalogBuffer), HAL_MAX_DELAY);
+        
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Transmite log a cada 1 segundo
+    }
 }
