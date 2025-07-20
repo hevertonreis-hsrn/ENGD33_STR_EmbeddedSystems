@@ -1,0 +1,5 @@
+../Core/Src/mainTasks copy.c:41:6:vTaskGeraDados	72	static
+../Core/Src/mainTasks copy.c:69:6:vTaskTransmissao	64	static
+../Core/Src/mainTasks copy.c:84:6:HAL_UART_RxCpltCallback	24	static,ignoring_inline_asm
+../Core/Src/mainTasks copy.c:96:6:vTaskRecepcao	24	static
+../Core/Src/mainTasks copy.c:118:6:SetupTarefasPortaCOMM	24	static,ignoring_inline_asm

@@ -1,0 +1,5 @@
+../Core/Src/mainTasks copy.c:41:6:vTaskGeraDados	2
+../Core/Src/mainTasks copy.c:69:6:vTaskTransmissao	2
+../Core/Src/mainTasks copy.c:84:6:HAL_UART_RxCpltCallback	3
+../Core/Src/mainTasks copy.c:96:6:vTaskRecepcao	6
+../Core/Src/mainTasks copy.c:118:6:SetupTarefasPortaCOMM	3
