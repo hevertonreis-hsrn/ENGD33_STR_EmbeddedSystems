@@ -7,6 +7,7 @@
 #define TAM_FILA_DADOS_MOTOR       120
 #define TAM_FILA_DADOS_VELOCIDADE  12
 #define TAM_FILA_DADOS_GPS         2
+#define TAM_FILA_PACOTES_SERIALIZADOS 10
 
 #define TIPO_MOTOR   0x01
 #define TIPO_VELOC   0x02
@@ -53,6 +54,7 @@ QueueHandle_t xFilaDadosMotor;
 QueueHandle_t xFilaDadosVelocidade;
 QueueHandle_t xFilaDadosGPS;
 QueueHandle_t xFilaComandos;
+QueueHandle_t xFilaPacotesSerializados;
 
 TaskHandle_t xHandleRecepcao = NULL;
 
@@ -138,7 +140,7 @@ size_t serializar_bloco(uint8_t tipo, const void *dados, uint16_t tamanho, uint8
     return 3 + tamanho;
 }
 
-void vTaskTransmissao(void *pvParameters) {
+void vTaskSimulaDatalogger(void *pvParameters) {
     uint8_t buffer[TAMANHO_BUFFER_TRANSMISSAO];
     size_t offset;
     DadosMotor_t motor;
@@ -164,11 +166,32 @@ void vTaskTransmissao(void *pvParameters) {
         }
 
         if (offset > 0) {
-            HAL_UART_Transmit(&huart6, buffer, offset, HAL_MAX_DELAY);
+            uint8_t *pacote = pvPortMalloc(offset);
+            if (pacote != NULL) {
+                memcpy(pacote, buffer, offset);
+                xQueueSend(xFilaPacotesSerializados, &pacote, portMAX_DELAY);
+            }
         }
 
         vTaskDelayUntil(&xLastWakeTime, xPeriod);
     }
+}
+
+void vTaskTransmissao(void *pvParameters) {
+    uint8_t *pacote;
+
+    const TickType_t xPeriod = pdMS_TO_TICKS(100);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    while (1) {
+        if (xQueueReceive(xFilaPacotesSerializados, &pacote, portMAX_DELAY)) {
+            HAL_UART_Transmit(&huart6, pacote, pacote[1] + (pacote[2] << 8) + 3, HAL_MAX_DELAY);
+            vPortFree(pacote);
+        }
+
+        vTaskDelayUntil(&xLastWakeTime, xPeriod);
+    }
+    
 }
 
 void vTaskRecepcao(void *pvParameters) {
@@ -200,17 +223,20 @@ void SetupTarefasPortaCOMM(void) {
     xFilaDadosVelocidade  = xQueueCreate(TAM_FILA_DADOS_VELOCIDADE, sizeof(DadosVelocidade_t));
     xFilaDadosGPS         = xQueueCreate(TAM_FILA_DADOS_GPS, sizeof(DadosGPS_t));
     xFilaComandos         = xQueueCreate(5, sizeof(ComandoRecebido_t));
+    xFilaPacotesSerializados = xQueueCreate(TAM_FILA_PACOTES_SERIALIZADOS, sizeof(uint8_t*));
 
     configASSERT(xFilaDadosMotor != NULL);
     configASSERT(xFilaDadosVelocidade != NULL);
     configASSERT(xFilaDadosGPS != NULL);
     configASSERT(xFilaComandos != NULL);
+    configASSERT(xFilaPacotesSerializados != NULL);
 
     HAL_UART_Receive_IT(&huart6, &comando_recebido, 1);
 
-    xTaskCreate(vTaskTransmissao,  "Transmite", 256, NULL, 2, NULL);
-    xTaskCreate(vTaskRecepcao,    "Recepcao",  256, NULL, 2, &xHandleRecepcao);
-    xTaskCreate(vTaskGeraDadosMotor, "Gera Dados Motor", 256, NULL, 2, NULL);
-    xTaskCreate(vTaskGeraDadosVel, "Gera Dados Velocidade", 256, NULL, 2, NULL);
-    xTaskCreate(vTaskGeraDadosGPS, "Gera Dados GPS", 256, NULL, 2, NULL);
+    xTaskCreate(vTaskSimulaDatalogger, "Datalog", 256, NULL, 2, NULL);
+    xTaskCreate(vTaskTransmissao,     "Transmite", 256, NULL, 2, NULL);
+    xTaskCreate(vTaskRecepcao,       "Recepcao",  256, NULL, 2, &xHandleRecepcao);
+    xTaskCreate(vTaskGeraDadosMotor, "GeraMotor", 256, NULL, 2, NULL);
+    xTaskCreate(vTaskGeraDadosVel,   "GeraVel",   256, NULL, 2, NULL);
+    xTaskCreate(vTaskGeraDadosGPS,   "GeraGPS",   256, NULL, 2, NULL);
 }

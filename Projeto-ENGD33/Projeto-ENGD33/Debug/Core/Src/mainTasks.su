@@ -1,8 +1,9 @@
-../Core/Src/mainTasks.c:61:6:vTaskGeraDadosMotor	88	static
-../Core/Src/mainTasks.c:82:6:vTaskGeraDadosVel	120	static
-../Core/Src/mainTasks.c:108:6:vTaskGeraDadosGPS	72	static
-../Core/Src/mainTasks.c:133:8:serializar_bloco	24	static
-../Core/Src/mainTasks.c:141:6:vTaskTransmissao	400	static
-../Core/Src/mainTasks.c:174:6:vTaskRecepcao	24	static
-../Core/Src/mainTasks.c:188:6:HAL_UART_RxCpltCallback	24	static,ignoring_inline_asm
-../Core/Src/mainTasks.c:198:6:SetupTarefasPortaCOMM	32	static,ignoring_inline_asm
+../Core/Src/mainTasks.c:63:6:vTaskGeraDadosMotor	88	static
+../Core/Src/mainTasks.c:84:6:vTaskGeraDadosVel	120	static
+../Core/Src/mainTasks.c:110:6:vTaskGeraDadosGPS	72	static
+../Core/Src/mainTasks.c:135:8:serializar_bloco	24	static
+../Core/Src/mainTasks.c:143:6:vTaskSimulaDatalogger	408	static
+../Core/Src/mainTasks.c:180:6:vTaskTransmissao	32	static
+../Core/Src/mainTasks.c:197:6:vTaskRecepcao	24	static
+../Core/Src/mainTasks.c:211:6:HAL_UART_RxCpltCallback	24	static,ignoring_inline_asm
+../Core/Src/mainTasks.c:221:6:SetupTarefasPortaCOMM	40	static,ignoring_inline_asm
